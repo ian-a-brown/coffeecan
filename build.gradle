@@ -31,9 +31,8 @@ jar {
 }
 
 repositories {
-    repositories {
-        mavenCentral()
-    }
+    mavenLocal()
+    mavenCentral()
 }
 
 sourceCompatibility = 1.8
