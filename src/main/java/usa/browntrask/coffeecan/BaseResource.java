@@ -131,8 +131,9 @@ public abstract class BaseResource<R, I extends Serializable> {
      * Returns the capability to use to authorize access to the data.
      *
      * @return the capability.
+     * @throws usa.browntrask.coffeecan.AuthorizationCriteriaException if there is a problem with authorization.
      */
-    protected abstract Capability capability();
+    protected abstract Capability capability() throws AuthorizationCriteriaException;
 
     protected final <A extends Serializable> A idOfType(final Class<A> klass, final String id) {
         try {
