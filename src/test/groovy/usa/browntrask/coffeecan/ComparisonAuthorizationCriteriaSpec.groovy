@@ -7,7 +7,7 @@ class ComparisonAuthorizationCriteriaSpec extends Specification {
 
     def "Constructing an authorization criteria without a field name produces an exception"() {
         when:
-        new ComparisonAuthorizationCriteria<TestEntity>(null, Operation.EQUALS, "");
+        new ComparisonAuthorizationCriteria<TestEntity>(TestEntity, null, Operation.EQUALS, "");
 
         then:
         MalformedAuthorizationCriteriaException malformedAuthorizationCriteriaException = thrown()
@@ -20,7 +20,8 @@ class ComparisonAuthorizationCriteriaSpec extends Specification {
         TestEntity testEntity = new TestEntity(stringField: "string")
 
         and:
-        ComparisonAuthorizationCriteria<TestEntity> authorizationCriteria = new ComparisonAuthorizationCriteria<>('stringField', matchOperation, matchValue)
+        ComparisonAuthorizationCriteria<TestEntity> authorizationCriteria = new ComparisonAuthorizationCriteria<>(
+                TestEntity, 'stringField', matchOperation, matchValue)
 
         when:
         boolean matched = authorizationCriteria.matches(testEntity)
@@ -40,7 +41,8 @@ class ComparisonAuthorizationCriteriaSpec extends Specification {
         TestEntity testEntity = new TestEntity(integerField: 1)
 
         and:
-        ComparisonAuthorizationCriteria<TestEntity> authorizationCriteria = new ComparisonAuthorizationCriteria<>('integerField', matchOperation, matchValue)
+        ComparisonAuthorizationCriteria<TestEntity> authorizationCriteria = new ComparisonAuthorizationCriteria<>(
+                TestEntity, 'integerField', matchOperation, matchValue)
 
         when:
         boolean matched = authorizationCriteria.matches(testEntity)
@@ -67,7 +69,8 @@ class ComparisonAuthorizationCriteriaSpec extends Specification {
         TestParentEntity testParentEntity = new TestParentEntity(child: testEntity, children: children)
 
         and:
-        ComparisonAuthorizationCriteria<TestEntity> authorizationCriteria = new ComparisonAuthorizationCriteria<>(fieldName, matchOperation, matchValue)
+        ComparisonAuthorizationCriteria<TestEntity> authorizationCriteria = new ComparisonAuthorizationCriteria<>(
+                TestParentEntity, fieldName, matchOperation, matchValue)
 
         when:
         boolean matched = authorizationCriteria.matches(testParentEntity)
@@ -85,7 +88,8 @@ class ComparisonAuthorizationCriteriaSpec extends Specification {
     @Unroll("Verification fails for #klass #fieldName producing #exceptionKlass")
     def "Verification fails with an exception if the field cannot be found"() {
         given:
-        ComparisonAuthorizationCriteria<?> comparisonAuthorizationCriteria = new ComparisonAuthorizationCriteria<?>(fieldName, Operation.EQUALS, "")
+        ComparisonAuthorizationCriteria<?> comparisonAuthorizationCriteria = new ComparisonAuthorizationCriteria<?>(
+                TestEntity, fieldName, Operation.EQUALS, "")
 
         when:
         comparisonAuthorizationCriteria.verify(klass)
@@ -95,15 +99,16 @@ class ComparisonAuthorizationCriteriaSpec extends Specification {
         exceptionKlass.isInstance(e)
 
         where:
-        klass                  | fieldName                 || exceptionKlass
-        TestEntity.class       | 'noSuchField'             || MalformedAuthorizationCriteriaException.class
-        TestParentEntity.class | 'child.noSuchField'       || MalformedAuthorizationCriteriaException.class
-        TestParentEntity.class | 'children[0].noSuchField' || MalformedAuthorizationCriteriaException.class
+        klass            | fieldName                 || exceptionKlass
+        TestEntity       | 'noSuchField'             || MalformedAuthorizationCriteriaException
+        TestParentEntity | 'child.noSuchField'       || MalformedAuthorizationCriteriaException
+        TestParentEntity | 'children[0].noSuchField' || MalformedAuthorizationCriteriaException
     }
 
-    def "Varification succeeds for valid inputs"() {
+    def "Verification succeeds for valid inputs"() {
         given:
-        ComparisonAuthorizationCriteria<?> comparisonAuthorizationCriteria = new ComparisonAuthorizationCriteria<?>(fieldName, Operation.EQUALS, value)
+        ComparisonAuthorizationCriteria<?> comparisonAuthorizationCriteria = new ComparisonAuthorizationCriteria<?>(
+                klass, fieldName, Operation.EQUALS, value)
 
         when:
         comparisonAuthorizationCriteria.verify(klass)
@@ -112,8 +117,8 @@ class ComparisonAuthorizationCriteriaSpec extends Specification {
         noExceptionThrown()
 
         where:
-        klass                  | fieldName            | value
-        TestEntity.class       | "stringField"        | "value"
-        TestParentEntity.class | "child.integerField" | 1
+        klass            | fieldName            | value
+        TestEntity       | "stringField"        | "value"
+        TestParentEntity | "child.integerField" | 1
     }
 }

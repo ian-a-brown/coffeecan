@@ -20,8 +20,8 @@ public class TestParentEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    @Column(name = "id", nullable = false, updatable = false)
-    private final Long id;
+    @Column(name = "id", nullable = false)
+    private Long id;
 
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "child_id")
@@ -32,7 +32,7 @@ public class TestParentEntity {
     private List<TestEntity> children = new ArrayList<>();
 
     public TestParentEntity() {
-        id = null;
+        this.id = null;
     }
 
     public TestParentEntity(final Long id) {
@@ -45,6 +45,10 @@ public class TestParentEntity {
 
     public void setChild(final TestEntity child) {
         this.child = child;
+    }
+
+    public void setId(final Long id) {
+        this.id = id;
     }
 
     public Long getId() {

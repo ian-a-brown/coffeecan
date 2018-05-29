@@ -122,7 +122,7 @@ public class AuthorizationCriteriaBuilder<R> {
     public AuthorizationCriteriaBuilder<R> compare(final String field, final Operation operation, final Object value)
             throws UnrecognizedCriteriaOperationException, MalformedAuthorizationCriteriaException {
         final ComparisonAuthorizationCriteria<R> comparisonAuthorizationCriteria = new ComparisonAuthorizationCriteria<>(
-                field, operation, value);
+                getKlass(), field, operation, value);
 
         return add(comparisonAuthorizationCriteria);
     }

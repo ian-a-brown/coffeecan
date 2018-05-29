@@ -33,8 +33,8 @@ class OrAuthorizationCriteriaIntegrationSpec extends Specification {
 
         where:
         orAuthorizationCriteria = new OrAuthorizationCriteria<TestEntity>(
-                new ComparisonAuthorizationCriteria<TestEntity>("stringField", Operation.EQUALS, "A"),
-                new ComparisonAuthorizationCriteria<TestEntity>("integerField", Operation.EQUALS, 1))
+                new ComparisonAuthorizationCriteria<TestEntity>(TestEntity, "stringField", Operation.EQUALS, "A"),
+                new ComparisonAuthorizationCriteria<TestEntity>(TestEntity, "integerField", Operation.EQUALS, 1))
         stringField | stringCompare | integerField | integerCompare || expectedSize
         "B"         | false         | 2            | false          || 0
         "A"         | true          | 3            | false          || 1

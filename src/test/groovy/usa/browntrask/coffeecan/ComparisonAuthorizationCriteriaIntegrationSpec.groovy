@@ -3,6 +3,7 @@ package usa.browntrask.coffeecan
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ContextConfiguration
+import spock.lang.Ignore
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -41,10 +42,12 @@ class ComparisonAuthorizationCriteriaIntegrationSpec extends Specification {
     @Unroll("toSpecification stringField #matchOperation #matchValue returns #matches")
     def "toSpecification finds the expected results from the database"() {
         given:
-        ComparisonAuthorizationCriteria<TestEntity> authorizationCriteria = new ComparisonAuthorizationCriteria<>('stringField', matchOperation, matchValue)
+        ComparisonAuthorizationCriteria<TestEntity> authorizationCriteria = new ComparisonAuthorizationCriteria<>(
+                TestEntity,'stringField', matchOperation, matchValue)
 
         and:
-        org.springframework.data.jpa.domain.Specification<TestEntity> specification = authorizationCriteria.toSpecification()
+        org.springframework.data.jpa.domain.Specification<TestEntity> specification =
+                authorizationCriteria.toSpecification()
 
         when:
         def results = testEntityRepository.findAll(specification)
@@ -57,5 +60,26 @@ class ComparisonAuthorizationCriteriaIntegrationSpec extends Specification {
         Operation.EQUALS | 'string'    || ['string0', 'string2']
         Operation.EQUALS | 'notString' || ['notStringM1']
         Operation.EQUALS | null        || ['nullM2']
+    }
+
+    def "Matches id field on association using association.id"() {
+        given:
+        TestEntity testEntity = new TestEntity(sharedParent: parentEntity, stringField: "Desired Entity")
+
+        and:
+        testEntityRepository.save(testEntity)
+
+        and:
+        ComparisonAuthorizationCriteria<TestEntity> authorizationCriteria = new ComparisonAuthorizationCriteria<>(
+                TestEntity, "sharedParent.id", Operation.EQUALS, parentEntity.getId())
+
+        and:
+        org.springframework.data.jpa.domain.Specification<TestEntity> specification = authorizationCriteria.toSpecification()
+
+        when:
+        def results = testEntityRepository.findAll(specification)
+
+        then:
+        results.collect{[it.id, it.stringField]} == [testEntity].collect{[it.id, it.stringField]}
     }
 }

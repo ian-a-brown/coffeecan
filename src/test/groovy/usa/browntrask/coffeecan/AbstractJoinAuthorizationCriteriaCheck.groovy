@@ -21,7 +21,7 @@ abstract class AbstractJoinAuthorizationCriteriaCheck<C extends JoinAuthorizatio
         where:
         joinedCriteria                                                                                           || expectedEmpty
         []                                                                                                       || true
-        [ new ComparisonAuthorizationCriteria<TestEntity>("stringField", Operation.EQUALS, "value")] || false
+        [ new ComparisonAuthorizationCriteria<TestEntity>(TestEntity, "stringField", Operation.EQUALS, "value")] || false
     }
 
     @Unroll("Can add to join with #joinedCriteria")
@@ -41,7 +41,7 @@ abstract class AbstractJoinAuthorizationCriteriaCheck<C extends JoinAuthorizatio
         where:
         joinedCriteria                                                                                           || expectedEmpty
         []                                                                                                       || true
-        [ new ComparisonAuthorizationCriteria<TestEntity>("stringField", Operation.EQUALS, "value")] || false
+        [ new ComparisonAuthorizationCriteria<TestEntity>(TestEntity, "stringField", Operation.EQUALS, "value")] || false
     }
 
     def "Cannot peek if nothing has been added"() {
@@ -58,7 +58,8 @@ abstract class AbstractJoinAuthorizationCriteriaCheck<C extends JoinAuthorizatio
 
     def "Can peek if something has been added"() {
         given:
-        AuthorizationCriteria<TestEntity> authorizationCriteria = new ComparisonAuthorizationCriteria<>("stringField", Operation.EQUALS, "value");
+        AuthorizationCriteria<TestEntity> authorizationCriteria = new ComparisonAuthorizationCriteria<>(
+                TestEntity, "stringField", Operation.EQUALS, "value");
 
         and:
         C joinAuthorizationCriteria = createJoinAuthorizationCriteria(authorizationCriteria)
@@ -84,7 +85,8 @@ abstract class AbstractJoinAuthorizationCriteriaCheck<C extends JoinAuthorizatio
 
     def "Can pop if something has been added"() {
         given:
-        AuthorizationCriteria<TestEntity> authorizationCriteria = new ComparisonAuthorizationCriteria<>("stringField", Operation.EQUALS, "value");
+        AuthorizationCriteria<TestEntity> authorizationCriteria = new ComparisonAuthorizationCriteria<>(
+                TestEntity, "stringField", Operation.EQUALS, "value");
 
         and:
         C joinAuthorizationCriteria = createJoinAuthorizationCriteria(authorizationCriteria)
@@ -111,18 +113,26 @@ abstract class AbstractJoinAuthorizationCriteriaCheck<C extends JoinAuthorizatio
         first << [
                 createJoinAuthorizationCriteria(),
                 createJoinAuthorizationCriteria(),
-                createJoinAuthorizationCriteria(new ComparisonAuthorizationCriteria<TestEntity>("stringField", Operation.EQUALS, "value")),
-                createJoinAuthorizationCriteria(new ComparisonAuthorizationCriteria<TestEntity>("stringField", Operation.EQUALS, "value")),
-                createJoinAuthorizationCriteria(new ComparisonAuthorizationCriteria<TestEntity>("stringField", Operation.EQUALS, "value")),
-                createJoinAuthorizationCriteria(new ComparisonAuthorizationCriteria<TestEntity>("stringField", Operation.EQUALS, "value"))
+                createJoinAuthorizationCriteria(new ComparisonAuthorizationCriteria<TestEntity>(
+                        TestEntity, "stringField", Operation.EQUALS, "value")),
+                createJoinAuthorizationCriteria(new ComparisonAuthorizationCriteria<TestEntity>(
+                        TestEntity, "stringField", Operation.EQUALS, "value")),
+                createJoinAuthorizationCriteria(new ComparisonAuthorizationCriteria<TestEntity>(
+                        TestEntity, "stringField", Operation.EQUALS, "value")),
+                createJoinAuthorizationCriteria(new ComparisonAuthorizationCriteria<TestEntity>(
+                        TestEntity, "stringField", Operation.EQUALS, "value"))
         ]
         second << [
                 createJoinAuthorizationCriteria(),
-                createJoinAuthorizationCriteria(new ComparisonAuthorizationCriteria<TestEntity>("stringField", Operation.EQUALS, "value")),
+                createJoinAuthorizationCriteria(new ComparisonAuthorizationCriteria<TestEntity>(
+                        TestEntity, "stringField", Operation.EQUALS, "value")),
                 createJoinAuthorizationCriteria(),
-                createJoinAuthorizationCriteria(new ComparisonAuthorizationCriteria<TestEntity>("stringField", Operation.EQUALS, "value")),
-                createJoinAuthorizationCriteria(new ComparisonAuthorizationCriteria<TestEntity>("stringField", Operation.EQUALS, "another value")),
-                createJoinAuthorizationCriteria(new ComparisonAuthorizationCriteria<TestEntity>("integerField", Operation.EQUALS, 1)),
+                createJoinAuthorizationCriteria(new ComparisonAuthorizationCriteria<TestEntity>(
+                        TestEntity, "stringField", Operation.EQUALS, "value")),
+                createJoinAuthorizationCriteria(new ComparisonAuthorizationCriteria<TestEntity>(
+                        TestEntity,"stringField", Operation.EQUALS, "another value")),
+                createJoinAuthorizationCriteria(new ComparisonAuthorizationCriteria<TestEntity>(
+                        TestEntity, "integerField", Operation.EQUALS, 1)),
         ]
         expectedEquals << [
                 true,
@@ -149,11 +159,15 @@ abstract class AbstractJoinAuthorizationCriteriaCheck<C extends JoinAuthorizatio
         joinedCriteriaList << [
                 [],
                 [null],
-                [new ComparisonAuthorizationCriteria<TestEntity>("stringField", Operation.EQUALS, "value")],
-                [new ComparisonAuthorizationCriteria<TestEntity>("stringField", Operation.EQUALS, "value"), null],
+                [new ComparisonAuthorizationCriteria<TestEntity>(
+                        TestEntity, "stringField", Operation.EQUALS, "value")],
+                [new ComparisonAuthorizationCriteria<TestEntity>(
+                        TestEntity, "stringField", Operation.EQUALS, "value"), null],
                 [
-                        new ComparisonAuthorizationCriteria<TestEntity>("stringField", Operation.EQUALS, "value"),
-                        new ComparisonAuthorizationCriteria<TestEntity>("badField", Operation.EQUALS, "value")
+                        new ComparisonAuthorizationCriteria<TestEntity>(
+                                TestEntity, "stringField", Operation.EQUALS, "value"),
+                        new ComparisonAuthorizationCriteria<TestEntity>(
+                                TestEntity, "badField", Operation.EQUALS, "value")
                 ]
         ]
         exception << [
@@ -168,8 +182,10 @@ abstract class AbstractJoinAuthorizationCriteriaCheck<C extends JoinAuthorizatio
     def "Verification works if the join authorization criteria is valid"() {
         given:
         AuthorizationCriteria<TestEntity>[] joinedCriteria = [
-                new ComparisonAuthorizationCriteria<TestEntity>("stringField", Operation.EQUALS, "value"),
-                new ComparisonAuthorizationCriteria<TestEntity>("integerField", Operation.EQUALS, 1)
+                new ComparisonAuthorizationCriteria<TestEntity>(
+                        TestEntity, "stringField", Operation.EQUALS, "value"),
+                new ComparisonAuthorizationCriteria<TestEntity>(
+                        TestEntity, "integerField", Operation.EQUALS, 1)
         ];
 
         when:
@@ -192,8 +208,10 @@ abstract class AbstractJoinAuthorizationCriteriaCheck<C extends JoinAuthorizatio
 
         where:
         joinAuthorizationCriteria = createJoinAuthorizationCriteria(
-                new ComparisonAuthorizationCriteria<TestEntity>("stringField", Operation.EQUALS, "A"),
-                new ComparisonAuthorizationCriteria<TestEntity>("integerField", Operation.EQUALS, 1))
+                new ComparisonAuthorizationCriteria<TestEntity>(
+                        TestEntity, "stringField", Operation.EQUALS, "A"),
+                new ComparisonAuthorizationCriteria<TestEntity>(
+                        TestEntity, "integerField", Operation.EQUALS, 1))
         stringField | stringCompare | integerField | integerCompare
         "B"         | false         | 2            | false
         "A"         | true          | 3            | false

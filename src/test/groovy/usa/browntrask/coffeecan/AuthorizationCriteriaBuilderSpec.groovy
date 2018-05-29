@@ -33,7 +33,8 @@ class AuthorizationCriteriaBuilderSpec extends Specification {
 
         where:
         fieldName      | operation        | value   || expectedResult
-        "stringField"  | Operation.EQUALS | "value" || new ComparisonAuthorizationCriteria<TestEntity>("stringField", Operation.EQUALS, "value")
+        "stringField"  | Operation.EQUALS | "value" || new ComparisonAuthorizationCriteria<TestEntity>(
+                TestEntity, "stringField", Operation.EQUALS, "value")
     }
 
     def "Creating an AND criteria after an AND criteria throws an exception"() {
@@ -78,8 +79,8 @@ class AuthorizationCriteriaBuilderSpec extends Specification {
 
         where:
         expectedResult = new AndAuthorizationCriteria<TestEntity>(
-                new ComparisonAuthorizationCriteria("stringField", Operation.EQUALS, "value"),
-                new ComparisonAuthorizationCriteria("integerField", Operation.EQUALS, 1)
+                new ComparisonAuthorizationCriteria(TestEntity, "stringField", Operation.EQUALS, "value"),
+                new ComparisonAuthorizationCriteria(TestEntity, "integerField", Operation.EQUALS, 1)
         )
     }
 
@@ -125,8 +126,8 @@ class AuthorizationCriteriaBuilderSpec extends Specification {
 
         where:
         expectedResult = new OrAuthorizationCriteria<TestEntity>(
-                new ComparisonAuthorizationCriteria("stringField", Operation.EQUALS, "value"),
-                new ComparisonAuthorizationCriteria("integerField", Operation.EQUALS, 1)
+                new ComparisonAuthorizationCriteria(TestEntity, "stringField", Operation.EQUALS, "value"),
+                new ComparisonAuthorizationCriteria(TestEntity, "integerField", Operation.EQUALS, 1)
         )
     }
 
