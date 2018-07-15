@@ -31,6 +31,9 @@ public class TestParentEntity {
     @OrderBy("integer_field ASC")
     private List<TestEntity> children = new ArrayList<>();
 
+    @Column(name = "integer_field")
+    private Integer integerField;
+
     public TestParentEntity() {
         this.id = null;
     }
@@ -41,6 +44,10 @@ public class TestParentEntity {
 
     public TestEntity getChild() {
         return child;
+    }
+
+    public Integer getIntegerField() {
+        return integerField;
     }
 
     public void setChild(final TestEntity child) {
@@ -61,5 +68,9 @@ public class TestParentEntity {
 
     public void setChildren(final List<TestEntity> children) {
         this.children = children;
+    }
+
+    public void setIntegerField(final Integer integerField) {
+        this.integerField = integerField;
     }
 }

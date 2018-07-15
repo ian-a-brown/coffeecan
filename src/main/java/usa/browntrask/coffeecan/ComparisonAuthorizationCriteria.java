@@ -271,7 +271,7 @@ class ComparisonAuthorizationCriteria<R> extends AbstractAuthorizationCriteria<R
                     value = method.invoke(object);
                 }
 
-            } catch (final IllegalAccessException | InvocationTargetException e) {
+            } catch (final IllegalAccessException | InvocationTargetException | NullPointerException e) {
                 throw new CoffeeCanException(
                         "Cannot retrieve " + nextPrefixName + " for " + prefixObject + object, e);
             }
@@ -312,7 +312,11 @@ class ComparisonAuthorizationCriteria<R> extends AbstractAuthorizationCriteria<R
         return Collections.unmodifiableList(methodMatches);
     }
 
-    private void buildFieldMethodMatches(final Class<?> klass, final List<String> fieldList, final int fieldIndex, final List<MethodMatch> methodMatches) {
+    private void buildFieldMethodMatches(
+            final Class<?> klass,
+            final List<String> fieldList,
+            final int fieldIndex,
+            final List<MethodMatch> methodMatches) {
         String fieldName = fieldList.get(fieldIndex);
         final MethodMatch methodMatch;
         final boolean matchFailure;
@@ -436,6 +440,14 @@ class ComparisonAuthorizationCriteria<R> extends AbstractAuthorizationCriteria<R
             }
 
             return returnClass;
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public String toString() {
+            return getClass().getSimpleName() +
+                   " Field: " + getFieldName() +
+                   " Method: " + getMethod();
         }
     }
 

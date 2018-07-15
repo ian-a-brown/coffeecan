@@ -66,7 +66,9 @@ class ComparisonAuthorizationCriteriaSpec extends Specification {
         TestEntity testEntity = new TestEntity(stringField: "test")
 
         and:
-        TestParentEntity testParentEntity = new TestParentEntity(child: testEntity, children: children)
+        TestParentEntity testParentEntity = new TestParentEntity(
+                child: testEntity,
+                children: children)
 
         and:
         ComparisonAuthorizationCriteria<TestEntity> authorizationCriteria = new ComparisonAuthorizationCriteria<>(
@@ -79,10 +81,46 @@ class ComparisonAuthorizationCriteriaSpec extends Specification {
         matched == matches
 
         where:
-        fieldName                 | matchOperation           | matchValue    || matches
-        'child.stringField'       | Operation.EQUALS         | 'test'        || true
-        'children.stringField'    | Operation.EQUALS         | 'child2'      || true
-        'children[2].stringField' | Operation.EQUALS         | 'child3'      || true
+        fieldName                   | matchOperation           | matchValue    || matches
+        'child.stringField'         | Operation.EQUALS         | 'test'        || true
+        'children.stringField'      | Operation.EQUALS         | 'child2'      || true
+        'children[2].stringField'   | Operation.EQUALS         | 'child3'      || true
+    }
+
+    def "Parent field should match should child"() {
+        given:
+        List<TestEntity> children = new LinkedList<>()
+        (1..3).each { children.add(new TestEntity(integerField: it, stringField: "child${it}")) }
+
+        and:
+        TestEntity testEntity = new TestEntity(stringField: "test")
+
+        and:
+        TestParentEntity testParentEntity = new TestParentEntity(
+                child: testEntity,
+                children: children,
+                integerField: 5
+        )
+
+        and:
+        testEntity.parent = testParentEntity
+
+        and:
+        children.each {child -> child.parent = testParentEntity}
+
+        and:
+        ComparisonAuthorizationCriteria<TestEntity> authorizationCriteria = new ComparisonAuthorizationCriteria<>(
+                TestParentEntity, fieldName, matchOperation, matchValue)
+
+        when:
+        boolean matched = authorizationCriteria.matches(testParentEntity)
+
+        then:
+        matched == matches
+
+        where:
+        fieldName                   | matchOperation           | matchValue    || matches
+        'child.parent.integerField' | Operation.EQUALS         | 5             || true
     }
 
     @Unroll("Verification fails for #klass #fieldName producing #exceptionKlass")
