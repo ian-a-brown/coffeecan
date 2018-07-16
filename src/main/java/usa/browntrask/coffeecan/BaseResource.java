@@ -31,8 +31,8 @@ import java.util.Map;
  */
 public abstract class BaseResource<R, I extends Serializable> {
 
-    private final Class<R> resourceClass;
-    private final Class<I> resourceIdentifierClass;
+    protected final Class<R> resourceClass;
+    protected final Class<I> resourceIdentifierClass;
 
     @Autowired
     protected ApplicationContext applicationContext;

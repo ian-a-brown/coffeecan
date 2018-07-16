@@ -26,8 +26,8 @@ import java.util.Map;
 public abstract class BaseChildResource<P, J extends Serializable, R, I extends Serializable>
         extends BaseResource<R, I> {
 
-    private final Class<P> parentClass;
-    private final Class<J> parentIdentifierClass;
+    protected final Class<P> parentClass;
+    protected final Class<J> parentIdentifierClass;
     private String parentField = "parentId";
     private String parentIdentifierField = "id";
     private Map<String, Object> parentLoadRestrictions = null;
@@ -59,14 +59,14 @@ public abstract class BaseChildResource<P, J extends Serializable, R, I extends 
      *
      * @param parentClass the parent resource class.
      * @param parentIdentifierClass the parent resource identifier class.
-     * @param parentField the name of the parent identifier field in the resource class.
      * @param resourceClass the resource class.
+     * @param parentField the name of the parent identifier field in the resource class.
      * @param resourceIdentifierClass the resource identifier class.
      */
     protected BaseChildResource(final Class<P> parentClass,
                                 final Class<J> parentIdentifierClass,
-                                final String parentField,
                                 final Class<R> resourceClass,
+                                final String parentField,
                                 final Class<I> resourceIdentifierClass) {
         this(parentClass, parentIdentifierClass, resourceClass, resourceIdentifierClass);
         this.parentField = parentField;
@@ -198,10 +198,12 @@ public abstract class BaseChildResource<P, J extends Serializable, R, I extends 
         if (!super.retrieveMultiple(handlerMethod, ids)) {
             return false;
         }
-        // TODO need to add specification to match parent ID to the resourceSpecifications.
-        if (true) {
-            throw new UnsupportedOperationException("Not implemented yet");
-        }
+
+        final AuthorizationCriteria<R> authorizationCriteria =
+                new AuthorizationCriteriaBuilder<>(resourceClass)
+                        .compare(parentField, Operation.EQUALS, findParentId(ids))
+                        .build();
+        resourceSpecifications.set(resourceSpecifications.get().and(authorizationCriteria.toSpecification()));
         return true;
     }
 

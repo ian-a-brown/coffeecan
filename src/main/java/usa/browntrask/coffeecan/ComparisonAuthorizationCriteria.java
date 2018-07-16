@@ -1,10 +1,10 @@
 package usa.browntrask.coffeecan;
 
+import org.reflections.Reflections;
 import org.springframework.data.jpa.domain.Specification;
 
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Expression;
 import javax.persistence.criteria.From;
 import javax.persistence.criteria.Join;
 import javax.persistence.criteria.JoinType;
@@ -14,6 +14,7 @@ import javax.persistence.criteria.Root;
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -23,6 +24,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -348,6 +350,15 @@ class ComparisonAuthorizationCriteria<R> extends AbstractAuthorizationCriteria<R
 
     private MethodMatch locateMethodForFieldName(final Class<?> klass, final String fieldName, final String offset,
                                                  final List<String> fieldList, final int fieldIndex) {
+        if (Modifier.isAbstract(klass.getModifiers())) {
+            final MethodMatch subKlassMethodMatch =
+                    locateMethodForFieldNameInSubclasses(klass, fieldName, offset, fieldList, fieldIndex);
+
+            if (subKlassMethodMatch != null) {
+                return subKlassMethodMatch;
+            }
+        }
+
         final Map<String, Method> getMethods = Arrays.asList(klass.getMethods())
                 .stream()
                 .filter(method -> method.getName().startsWith("get") &&
@@ -376,6 +387,22 @@ class ComparisonAuthorizationCriteria<R> extends AbstractAuthorizationCriteria<R
         }
 
         return new MethodMatch(klass, fieldName, null, newFieldList, fieldIndex + 1);
+    }
+
+    private MethodMatch locateMethodForFieldNameInSubclasses(final Class<?> klass, final String fieldName, final String offset,
+                                                              final List<String> fieldList, final int fieldIndex) {
+        final Package klassPackage = klass.getPackage();
+        final Reflections reflections = new Reflections(klassPackage.getName());
+        final Set subclasses = reflections.getSubTypesOf(klass);
+        for (final Object subclass : subclasses) {
+            final Class<?> subKlass = (Class<?>) subclass;
+            final MethodMatch methodMatch = locateMethodForFieldName(subKlass, fieldName, offset, fieldList, fieldIndex);
+            if (methodMatch.getMethod() != null) {
+                return methodMatch;
+            }
+        }
+
+        return null;
     }
 
     /**

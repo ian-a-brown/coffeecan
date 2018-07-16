@@ -45,6 +45,7 @@ dependencies {
     compile 'org.springframework.boot:spring-boot-starter-hateoas'
     compile 'org.codehaus.groovy:groovy-all:2.4.13'
     compile 'org.yaml:snakeyaml'
+    compile 'org.reflections:reflections:0.9.10'
 
     runtime 'com.h2database:h2'
 

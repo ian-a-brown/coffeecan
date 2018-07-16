@@ -1,5 +1,7 @@
 package usa.browntrask.coffeecan;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -23,9 +25,14 @@ public class TestEntity {
     @Column(name = "integer_field")
     private Integer integerField;
 
+    @JsonIgnore
     @OneToOne(mappedBy = "child")
     private TestParentEntity parent;
 
+    @Column(name = "shared_parent_id", insertable=false, updatable=false)
+    private Long sharedParentId;
+
+    @JsonIgnore
     @ManyToOne
     @JoinColumn(name = "shared_parent_id")
     private TestParentEntity sharedParent;
@@ -40,6 +47,10 @@ public class TestEntity {
 
     public TestParentEntity getParent() {
         return parent;
+    }
+
+    public Long getSharedParentId() {
+        return sharedParentId;
     }
 
     public void setParent(final TestParentEntity parent) {

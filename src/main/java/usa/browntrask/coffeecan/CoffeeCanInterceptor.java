@@ -9,6 +9,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -38,20 +39,20 @@ public class CoffeeCanInterceptor extends HandlerInterceptorAdapter {
     }
 
     private List<String> extractPathVariables(final RequestMapping requestMapping) {
-        if (requestMapping != null) {
-            if (requestMapping.path().length > 0) {
-                return Arrays.stream(requestMapping.path())
-                        .map((pathElement) -> {
-                            if (pathElement.matches("/\\{.*\\}")) {
-                                return pathElement.replaceAll("[/\\{\\}]", "");
-                            } else {
-                                return null;
-                            }
-                        })
-                        .collect(Collectors.toList());
-            } else {
-                return Arrays.asList(new String[requestMapping.value().length]);
+        if ((requestMapping != null) && (requestMapping.path().length > 0)) {
+            if (requestMapping.path().length > 1) {
+                throw new UnsupportedOperationException("Multiple path elements " + requestMapping.path() + " are not supported");
             }
+
+            final String[] pathElements = requestMapping.path()[0].split("/");
+            return Arrays.stream(pathElements)
+                    .map((pathElement) -> {
+                        if (pathElement.startsWith("{") && pathElement.endsWith("}")) {
+                            return pathElement.substring(1, pathElement.length() - 1);
+                        } else {
+                            return null;
+                        }
+                    }).collect(Collectors.toList());
         }
 
         return new ArrayList<>();
@@ -80,14 +81,13 @@ public class CoffeeCanInterceptor extends HandlerInterceptorAdapter {
 
     private Map<String, String> matchIdsToRequest(final HttpServletRequest request, final List<String> pathVariables,
                                                   final int startAt) {
-        final int actualStartAt = startAt + (request.getRequestURI().startsWith("/") ? 1 : 0);
         final String[] uriElements = request.getRequestURI().split("/");
         final Map<String, String> idValues = new HashMap<>();
 
         for (int idx = 0; idx < pathVariables.size(); ++idx) {
             final String pathVariable = pathVariables.get(idx);
             if (pathVariable != null) {
-                idValues.put(pathVariable, uriElements[actualStartAt + idx]);
+                idValues.put(pathVariable, uriElements[idx]);
             }
         }
 
@@ -126,8 +126,7 @@ public class CoffeeCanInterceptor extends HandlerInterceptorAdapter {
     private boolean preHandleGet(final HandlerMethod handler,
                                  final BaseResource bean,
                                  final Map<String, String> ids) throws CoffeeCanException {
-        // TODO actually, with the possibility of IDs aside from the resource identifier, we should simply check that that one is missing.
-        return ids.isEmpty() ? bean.retrieveMultiple(handler, ids) : bean.retrieveSingle(handler, ids);
+        return ids.keySet().contains("id") ? bean.retrieveSingle(handler, ids) : bean.retrieveMultiple(handler, ids);
     }
 
     private boolean preHandleHandlerMethod(final HttpServletRequest request,
