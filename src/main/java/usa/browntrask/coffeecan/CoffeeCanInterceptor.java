@@ -70,10 +70,11 @@ public class CoffeeCanInterceptor extends HandlerInterceptorAdapter {
 
         if (!controllerPathVariables.isEmpty()) {
             ids.putAll(matchIdsToRequest(request, controllerPathVariables, startAt));
+            startAt = controllerPathVariables.size() - 1;
         }
 
         if (!methodPathVariables.isEmpty()) {
-            ids.putAll(matchIdsToRequest(request, methodPathVariables, controllerPathVariables.size()));
+            ids.putAll(matchIdsToRequest(request, methodPathVariables, startAt));
         }
 
         return ids;
@@ -87,7 +88,7 @@ public class CoffeeCanInterceptor extends HandlerInterceptorAdapter {
         for (int idx = 0; idx < pathVariables.size(); ++idx) {
             final String pathVariable = pathVariables.get(idx);
             if (pathVariable != null) {
-                idValues.put(pathVariable, uriElements[idx]);
+                idValues.put(pathVariable, uriElements[idx + startAt]);
             }
         }
 
