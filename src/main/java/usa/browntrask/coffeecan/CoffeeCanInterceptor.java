@@ -1,15 +1,17 @@
 package usa.browntrask.coffeecan;
 
+import org.springframework.aop.TargetClassAware;
+import org.springframework.aop.TargetSource;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -99,7 +101,13 @@ public class CoffeeCanInterceptor extends HandlerInterceptorAdapter {
                                           final HttpServletResponse response,
                                           final HandlerMethod handler,
                                           final BaseResource bean) throws CoffeeCanException {
-        final RequestMapping controllerRequestMapping = bean.getClass().getAnnotation(RequestMapping.class);
+        final Class<?> klass;
+        if (bean instanceof TargetClassAware) {
+            klass = ((TargetClassAware) bean).getTargetClass();
+        } else {
+            klass = bean.getClass();
+        }
+        final RequestMapping controllerRequestMapping = klass.getAnnotation(RequestMapping.class);
         final RequestMapping methodRequestMapping = handler.getMethodAnnotation(RequestMapping.class);
 
         if ((controllerRequestMapping == null) && (methodRequestMapping == null)) {
@@ -134,7 +142,8 @@ public class CoffeeCanInterceptor extends HandlerInterceptorAdapter {
                                            final HttpServletResponse response,
                                            final HandlerMethod handler) throws CoffeeCanException {
         if (handler.getBean() instanceof BaseResource) {
-            return preHandleBaseResource(request, response, handler, (BaseResource) handler.getBean());
+            final CglibHelper helper = new CglibHelper(handler.getBean());
+            return preHandleBaseResource(request, response, handler, (BaseResource) helper.getTargetObject());
         }
 
         return true;
@@ -163,6 +172,52 @@ public class CoffeeCanInterceptor extends HandlerInterceptorAdapter {
             return preHandlePut(handler, bean, ids);
         } else {
             throw new UnsupportedOperationException("Not implemented yet");
+        }
+    }
+
+    private class CglibHelper {
+        private final Object proxied;
+
+        public CglibHelper(Object proxied) {
+            this.proxied = proxied;
+        }
+
+        public Object getTargetObject() {
+            String name = proxied.getClass().getName();
+            if (name.toLowerCase().contains("cglib")) {
+                return extractTargetObject(proxied);
+            }
+            return proxied;
+        }
+
+        private Object extractTargetObject(Object proxied) {
+            try {
+                return findSpringTargetSource(proxied).getTarget();
+            } catch (final Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        private TargetSource findSpringTargetSource(Object proxied) {
+            Method[] methods = proxied.getClass().getDeclaredMethods();
+            Method targetSourceMethod = findTargetSourceMethod(methods);
+            targetSourceMethod.setAccessible(true);
+            try {
+                return (TargetSource)targetSourceMethod.invoke(proxied);
+            } catch (final Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        private Method findTargetSourceMethod(Method[] methods) {
+            for (Method method : methods) {
+                if (method.getName().endsWith("getTargetSource")) {
+                    return method;
+                }
+            }
+            throw new IllegalStateException(
+                    "Could not find target source method on proxied object ["
+                    + proxied.getClass() + "]");
         }
     }
 }

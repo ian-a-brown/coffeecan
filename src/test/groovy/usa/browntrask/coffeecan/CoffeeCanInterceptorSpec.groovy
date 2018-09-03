@@ -1,5 +1,6 @@
 package usa.browntrask.coffeecan
 
+import org.springframework.data.repository.Repository
 import org.springframework.mock.web.MockHttpServletRequest
 import org.springframework.mock.web.MockHttpServletResponse
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -217,8 +218,20 @@ class CoffeeCanInterceptorSpec extends Specification {
 
     @RestController
     private class UnmappedResource extends BaseResource<Object, Long> {
-        UnmappedResource() {
-            super(Object.class, Long.class)
+
+        @Override
+        protected Class<Object> getResourceClass() {
+            return Object
+        }
+
+        @Override
+        protected Class<Long> getResourceIdentifierClass() {
+            return Long
+        }
+
+        @Override
+        protected Repository<Object, Long> getResourceRepository() {
+            throw new UnsupportedOperationException("Should not be called")
         }
 
         @Override
@@ -232,7 +245,7 @@ class CoffeeCanInterceptorSpec extends Specification {
     }
 
     @RestController
-    @RequestMapping("/testEntities")
+    @RequestMapping(path = "/testEntities")
     private class EntityResource extends BaseResource<TestEntity, Long> {
 
         private org.springframework.data.jpa.domain.Specification<TestEntity> testSpecification
@@ -241,8 +254,19 @@ class CoffeeCanInterceptorSpec extends Specification {
         private TestEntity testEntity
         TestEntity entity
 
-        EntityResource() {
-            super(TestEntity.class, Long.class)
+        @Override
+        protected Class<TestEntity> getResourceClass() {
+            return TestEntity
+        }
+
+        @Override
+        protected Class<Long> getResourceIdentifierClass() {
+            return Long
+        }
+
+        @Override
+        protected Repository<TestEntity, Long> getResourceRepository() {
+            throw new UnsupportedOperationException("Should not be called")
         }
 
         @Override

@@ -8,7 +8,7 @@ class NotAuthorizationCriteriaSpec extends Specification {
     @Unroll("#value != value? #expectedMatches")
     def "Matches the inverse of the child authorization criteria"() {
         given:
-        ComparisonAuthorizationCriteria<?> comparisonAuthorizationCriteria = new ComparisonAuthorizationCriteria<?>("stringField", Operation.EQUALS, "value")
+        ComparisonAuthorizationCriteria<?> comparisonAuthorizationCriteria = new ComparisonAuthorizationCriteria<?>(TestEntity, "stringField", Operation.EQUALS, "value")
 
         and:
         NotAuthorizationCriteria<?> notAuthorizationCriteria = new NotAuthorizationCriteria<?>(comparisonAuthorizationCriteria)
@@ -21,14 +21,14 @@ class NotAuthorizationCriteriaSpec extends Specification {
 
         where:
         value         | expectedMatches
-        "value"       | !(new ComparisonAuthorizationCriteria<TestEntity>("stringField", Operation.EQUALS, "value").matches(new TestEntity(stringField: "value")))
-        "other value" | !(new ComparisonAuthorizationCriteria<TestEntity>("stringField", Operation.EQUALS, "value").matches(new TestEntity(stringField: "other value")))
+        "value"       | !(new ComparisonAuthorizationCriteria<TestEntity>(TestEntity, "stringField", Operation.EQUALS, "value").matches(new TestEntity(stringField: "value")))
+        "other value" | !(new ComparisonAuthorizationCriteria<TestEntity>(TestEntity, "stringField", Operation.EQUALS, "value").matches(new TestEntity(stringField: "other value")))
     }
 
     @Unroll("Verification fails for #klass #fieldName producing #exceptionKlass")
     def "Verification fails with an exception if the field cannot be found"() {
         given:
-        ComparisonAuthorizationCriteria<?> comparisonAuthorizationCriteria = new ComparisonAuthorizationCriteria<?>(fieldName, Operation.EQUALS, "")
+        ComparisonAuthorizationCriteria<?> comparisonAuthorizationCriteria = new ComparisonAuthorizationCriteria<?>(klass, fieldName, Operation.EQUALS, "")
 
         and:
         NotAuthorizationCriteria<?> notAuthorizationCriteria = new NotAuthorizationCriteria<?>(comparisonAuthorizationCriteria)
@@ -50,7 +50,7 @@ class NotAuthorizationCriteriaSpec extends Specification {
     @Unroll("Verification succeeds for #klass #fieldName = #value")
     def "Varification succeeds for valid inputs"() {
         given:
-        ComparisonAuthorizationCriteria<?> comparisonAuthorizationCriteria = new ComparisonAuthorizationCriteria<?>(fieldName, Operation.EQUALS, value)
+        ComparisonAuthorizationCriteria<?> comparisonAuthorizationCriteria = new ComparisonAuthorizationCriteria<?>(klass, fieldName, Operation.EQUALS, value)
 
         and:
         NotAuthorizationCriteria<?> notAuthorizationCriteria = new NotAuthorizationCriteria<?>(comparisonAuthorizationCriteria)

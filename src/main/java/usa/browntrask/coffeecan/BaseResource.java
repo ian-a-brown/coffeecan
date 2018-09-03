@@ -31,42 +31,23 @@ import java.util.Map;
  */
 public abstract class BaseResource<R, I extends Serializable> {
 
-    protected final Class<R> resourceClass;
-    protected final Class<I> resourceIdentifierClass;
-
     @Autowired
     protected ApplicationContext applicationContext;
 
     protected ThreadLocal<Specifications<R>> resourceSpecifications = new ThreadLocal<>();
 
-    private String resourceIdentifierField = "id";
     private Map<String, Object> resourceLoadRestrictions = null;
     private Map<String, Object> resourceAuthorizeRestrictions = null;
-    private Repository<R, I> resourceRepository = null;
     private ThreadLocal<R> resource = new ThreadLocal<>();
 
-    /**
-     * Constructs a base resource with a default "id" identifier field name.
-     *
-     * @param resourceClass           the resource class.
-     * @param resourceIdentifierClass the resource identifier class.
-     */
-    protected BaseResource(final Class<R> resourceClass, final Class<I> resourceIdentifierClass) {
-        this.resourceClass = resourceClass;
-        this.resourceIdentifierClass = resourceIdentifierClass;
-    }
+    protected abstract Class<R> getResourceClass();
 
-    /**
-     * Constructs a base resource.
-     *
-     * @param resourceClass           the resource class.
-     * @param resourceIdentifierClass the resource identifier class.
-     * @param resourceIdentifierField the resource identifier field name.
-     */
-    protected BaseResource(final Class<R> resourceClass, final Class<I> resourceIdentifierClass,
-                           final String resourceIdentifierField) {
-        this(resourceClass, resourceIdentifierClass);
-        this.resourceIdentifierField = resourceIdentifierField;
+    protected abstract Class<I> getResourceIdentifierClass();
+
+    protected abstract Repository<R, I> getResourceRepository();
+
+    protected String getResourceIdentifierField() {
+        return "id";
     }
 
     /**
@@ -92,7 +73,7 @@ public abstract class BaseResource<R, I extends Serializable> {
         throw new AccessDeniedException("Access denied " + method + " " + name + " for " + ids);
     }
 
-    protected final boolean authorizeObject(final HandlerMethod handlerMethod, final Map<String, Object> restrictions,
+    protected boolean authorizeObject(final HandlerMethod handlerMethod, final Map<String, Object> restrictions,
                                             final Object object)
             throws CoffeeCanException {
         if (!shouldHandle(handlerMethod, restrictions)) {
@@ -108,7 +89,7 @@ public abstract class BaseResource<R, I extends Serializable> {
      * This is the equivalent of calling {@link #authorizeResource(java.util.Map)} with an empty map.
      * </p>
      */
-    protected final void authorizeResource() {
+    protected void authorizeResource() {
         authorizeResource(new HashMap<>());
     }
 
@@ -123,8 +104,10 @@ public abstract class BaseResource<R, I extends Serializable> {
      *                     resources.</li>
      *                     </ul>
      */
-    protected final void authorizeResource(final Map<String, Object> restrictions) {
-        resourceAuthorizeRestrictions = Collections.unmodifiableMap(restrictions);
+    protected void authorizeResource(final Map<String, Object> restrictions) {
+        synchronized (this) {
+            resourceAuthorizeRestrictions = Collections.unmodifiableMap(restrictions);
+        }
     }
 
     /**
@@ -135,7 +118,7 @@ public abstract class BaseResource<R, I extends Serializable> {
      */
     protected abstract Capability capability() throws AuthorizationCriteriaException;
 
-    protected final <A extends Serializable> A idOfType(final Class<A> klass, final String id) {
+    protected <A extends Serializable> A idOfType(final Class<A> klass, final String id) {
         try {
             final Constructor<?> idFieldConstructor = klass.getConstructor(String.class);
             return (A) idFieldConstructor.newInstance(id);
@@ -155,7 +138,7 @@ public abstract class BaseResource<R, I extends Serializable> {
      * This is the equivalent of calling {@link #loadAndAuthorizeResource(java.util.Map)} with an empty map.
      * </p>
      */
-    protected final void loadAndAuthorizeResource() {
+    protected void loadAndAuthorizeResource() {
         loadAndAuthorizeResource(new HashMap<>());
     }
 
@@ -174,7 +157,7 @@ public abstract class BaseResource<R, I extends Serializable> {
      *                     authorize resources.</li>
      *                     </ul>
      */
-    protected final void loadAndAuthorizeResource(final Map<String, Object> restrictions) {
+    protected void loadAndAuthorizeResource(final Map<String, Object> restrictions) {
         loadResource(restrictions);
         authorizeResource(restrictions);
     }
@@ -185,7 +168,7 @@ public abstract class BaseResource<R, I extends Serializable> {
      * This is the equivalent of calling {@link #loadResource(java.util.Map)} with an empty map.
      * </p>
      */
-    protected final void loadResource() {
+    protected void loadResource() {
         loadResource(new HashMap<>());
     }
 
@@ -199,8 +182,10 @@ public abstract class BaseResource<R, I extends Serializable> {
      *                     resources.</li>
      *                     </ul>
      */
-    protected final void loadResource(final Map<String, Object> restrictions) {
-        resourceLoadRestrictions = Collections.unmodifiableMap(restrictions);
+    protected void loadResource(final Map<String, Object> restrictions) {
+        synchronized (this) {
+            resourceLoadRestrictions = Collections.unmodifiableMap(restrictions);
+        }
     }
 
     /**
@@ -208,7 +193,7 @@ public abstract class BaseResource<R, I extends Serializable> {
      *
      * @return the loaded resource.
      */
-    protected final R resource() {
+    protected R resource() {
         return resource.get();
     }
 
@@ -220,7 +205,7 @@ public abstract class BaseResource<R, I extends Serializable> {
      *
      * @return the resources.
      */
-    protected final List<R> resources() {
+    protected List<R> resources() {
         return resources((Specification<R>) null);
     }
 
@@ -233,7 +218,7 @@ public abstract class BaseResource<R, I extends Serializable> {
      * @param specification the additional specification to apply.
      * @return the resources.
      */
-    protected final List<R> resources(final Specification<R> specification) {
+    protected List<R> resources(final Specification<R> specification) {
         return resources(specification, (Sort) null);
     }
 
@@ -245,15 +230,14 @@ public abstract class BaseResource<R, I extends Serializable> {
      * @param sort          the optional sort to apply.
      * @return the resources.
      */
-    protected final List<R> resources(final Specification<R> specification, final Sort sort) {
+    protected List<R> resources(final Specification<R> specification, final Sort sort) {
         final Specifications<R> specifications = buildSpecifications(specification);
 
-        locateResourceRepository();
         if (sort == null) {
-            return ((JpaSpecificationExecutor<R>) resourceRepository).findAll(specifications);
+            return ((JpaSpecificationExecutor<R>) getResourceRepository()).findAll(specifications);
         }
 
-        return ((JpaSpecificationExecutor<R>) resourceRepository).findAll(specifications, sort);
+        return ((JpaSpecificationExecutor<R>) getResourceRepository()).findAll(specifications, sort);
     }
 
     /**
@@ -263,7 +247,7 @@ public abstract class BaseResource<R, I extends Serializable> {
      * @param pageable the pageable to use.
      * @return the resources page.
      */
-    protected final Page<R> resources(final Pageable pageable) {
+    protected Page<R> resources(final Pageable pageable) {
         return resources(null, pageable);
     }
 
@@ -274,11 +258,10 @@ public abstract class BaseResource<R, I extends Serializable> {
      * @param pageable      the pageable to use.
      * @return the resources page.
      */
-    protected final Page<R> resources(final Specification<R> specification, final Pageable pageable) {
+    protected Page<R> resources(final Specification<R> specification, final Pageable pageable) {
         final Specifications<R> specifications = buildSpecifications(specification);
 
-        locateResourceRepository();
-        return ((JpaSpecificationExecutor<R>) resourceRepository).findAll(specifications, pageable);
+        return ((JpaSpecificationExecutor<R>) getResourceRepository()).findAll(specifications, pageable);
     }
 
     /**
@@ -293,7 +276,7 @@ public abstract class BaseResource<R, I extends Serializable> {
     protected boolean retrieveMultiple(final HandlerMethod handlerMethod, final Map<String, String> ids)
             throws CoffeeCanException {
         final Specification<R> authorizedSpecification = capability()
-                .toSpecification(handlerMethod.getMethod().getName(), resourceClass);
+                .toSpecification(handlerMethod.getMethod().getName(), getResourceClass());
         resourceSpecifications.set(Specifications.where(authorizedSpecification));
         return true;
     }
@@ -306,12 +289,12 @@ public abstract class BaseResource<R, I extends Serializable> {
      * @throws usa.browntrask.coffeecan.CoffeeCanException if there is a problem accessing the single resource.
      * @returns <code>true</code> if the retrieval was successful, <code>false</code> if it was denied.
      */
-    protected boolean retrieveSingle(final HandlerMethod handlerMethod, final Map<String, String> ids)
+    protected boolean retrieveSingle(final HandlerMethod handlerMethod, Map<String, String> ids)
             throws CoffeeCanException {
         return retrieveResource(handlerMethod, ids);
     }
 
-    protected final boolean shouldHandle(final HandlerMethod handlerMethod, final Map<String, Object> restrictions) {
+    protected boolean shouldHandle(final HandlerMethod handlerMethod, final Map<String, Object> restrictions) {
         if ((restrictions == null) || restrictions.isEmpty()) {
             return true;
         }
@@ -336,41 +319,39 @@ public abstract class BaseResource<R, I extends Serializable> {
     }
 
     private R findResource(final Map<String, String> ids) {
-        final I id = idOfType(resourceIdentifierClass, findResourceId(ids));
+        final I id = idOfType(getResourceIdentifierClass(), findResourceId(ids));
 
         return findResourceInRepository(id);
     }
 
     private String findResourceId(final Map<String, String> ids) {
-        return ids.get(resourceIdentifierField);
+        return ids.get(getResourceIdentifierField());
     }
 
     private R findResourceInRepository(final I id) {
-        locateResourceRepository();
-
-        return ((CrudRepository<R, I>) resourceRepository).findOne(id);
-    }
-
-    private void locateResourceRepository() {
-        if (resourceRepository == null) {
-            final Repositories repositories = new Repositories(applicationContext);
-            resourceRepository = (Repository<R, I>) repositories.getRepositoryFor(resourceClass);
-        }
+        return ((CrudRepository<R, I>) getResourceRepository()).findOne(id);
     }
 
     private boolean retrieveResource(final HandlerMethod handlerMethod, final Map<String, String> ids)
             throws CoffeeCanException {
-        if (!shouldHandle(handlerMethod, resourceLoadRestrictions) &&
-            !shouldHandle(handlerMethod, resourceAuthorizeRestrictions)) {
+        final Map<String, Object> loadRestrictions;
+        final Map<String, Object> authorizeRestrictions;
+        synchronized (this) {
+            loadRestrictions = (resourceLoadRestrictions == null) ? null : new HashMap<>(resourceLoadRestrictions);
+            authorizeRestrictions = (resourceAuthorizeRestrictions == null) ? null : new HashMap<>(resourceAuthorizeRestrictions);
+        }
+
+        if (!shouldHandle(handlerMethod, loadRestrictions) &&
+            !shouldHandle(handlerMethod, authorizeRestrictions)) {
             return true;
         }
 
         final R loadedResource = findResource(ids);
-        if (!authorizeObject(handlerMethod, resourceAuthorizeRestrictions, loadedResource)) {
+        if (!authorizeObject(handlerMethod, authorizeRestrictions, loadedResource)) {
             return false;
         }
 
-        resource.set(shouldHandle(handlerMethod, resourceLoadRestrictions) ? loadedResource : null);
+        resource.set(shouldHandle(handlerMethod, loadRestrictions) ? loadedResource : null);
         return true;
     }
 }

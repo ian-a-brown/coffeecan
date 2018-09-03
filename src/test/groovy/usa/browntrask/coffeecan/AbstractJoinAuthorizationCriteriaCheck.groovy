@@ -30,7 +30,7 @@ abstract class AbstractJoinAuthorizationCriteriaCheck<C extends JoinAuthorizatio
         C joinAuthorizationCriteria = createJoinAuthorizationCriteria(joinedCriteria as AuthorizationCriteria<R>[])
 
         when:
-        joinedCriteria.add(new ComparisonAuthorizationCriteria<TestEntity>("integerField", Operation.EQUALS, 1))
+        joinedCriteria.add(new ComparisonAuthorizationCriteria<TestEntity>(TestEntity, "integerField", Operation.EQUALS, 1))
 
         then:
         noExceptionThrown()

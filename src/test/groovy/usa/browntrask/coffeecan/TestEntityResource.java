@@ -1,6 +1,7 @@
 package usa.browntrask.coffeecan;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.repository.Repository;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -12,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/entities")
+@RequestMapping(path = "/entities")
 public class TestEntityResource extends BaseResource<TestEntity, Long> {
 
     @Autowired
@@ -21,8 +22,19 @@ public class TestEntityResource extends BaseResource<TestEntity, Long> {
     @Autowired
     private TestEntityRepository testEntityRepository;
 
-    public TestEntityResource() {
-        super(TestEntity.class, Long.class);
+    @Override
+    protected Class<TestEntity> getResourceClass() {
+        return TestEntity.class;
+    }
+
+    @Override
+    protected Class<Long> getResourceIdentifierClass() {
+        return Long.class;
+    }
+
+    @Override
+    protected Repository<TestEntity, Long> getResourceRepository() {
+        return testEntityRepository;
     }
 
     @Override

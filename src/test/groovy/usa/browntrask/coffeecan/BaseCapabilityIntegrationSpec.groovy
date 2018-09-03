@@ -37,7 +37,7 @@ class BaseCapabilityIntegrationSpec extends Specification {
 
         and:
         if (field) {
-            baseCapability.can(action, TestEntity, new ComparisonAuthorizationCriteria<TestEntity>(field, operation, value))
+            baseCapability.can(action, TestEntity, new ComparisonAuthorizationCriteria<TestEntity>(TestEntity, field, operation, value))
         } else {
             baseCapability.setDefaultAccess(true)
         }
@@ -71,7 +71,7 @@ class BaseCapabilityIntegrationSpec extends Specification {
 
         and:
         if (field) {
-            baseCapability.cannot(action, TestEntity, new ComparisonAuthorizationCriteria<TestEntity>(field, operation, value))
+            baseCapability.cannot(action, TestEntity, new ComparisonAuthorizationCriteria<TestEntity>(TestEntity, field, operation, value))
         } else {
             baseCapability.setDefaultAccess(false)
         }

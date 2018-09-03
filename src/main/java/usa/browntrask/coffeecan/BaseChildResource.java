@@ -26,76 +26,17 @@ import java.util.Map;
 public abstract class BaseChildResource<P, J extends Serializable, R, I extends Serializable>
         extends BaseResource<R, I> {
 
-    protected final Class<P> parentClass;
-    protected final Class<J> parentIdentifierClass;
-    private String parentField = "parentId";
-    private String parentIdentifierField = "id";
     private Map<String, Object> parentLoadRestrictions = null;
     private Map<String, Object> parentAuthorizeRestrictions = null;
-    private Repository<P, J> parentRepository = null;
     private ThreadLocal<P> parent = new ThreadLocal<>();
 
-    /**
-     * Constructs a base child resource with default parent identifier field name of "id", parent field name of
-     * "parentName", and resource identifier field name of "id".
-     *
-     * @param parentClass the parent resource class.
-     * @param parentIdentifierClass the parent resource identifier class.
-     * @param resourceClass the resource class.
-     * @param resourceIdentifierClass the resource identifier class.
-     */
-    protected BaseChildResource(final Class<P> parentClass,
-                                final Class<J> parentIdentifierClass,
-                                final Class<R> resourceClass,
-                                final Class<I> resourceIdentifierClass) {
-        super(resourceClass, resourceIdentifierClass);
-        this.parentClass = parentClass;
-        this.parentIdentifierClass = parentIdentifierClass;
-    }
+    protected abstract Class<P> getParentClass();
 
-    /**
-     * Constructs a base child resource with default parent identifier field name of "id" and resource identifier
-     * field name of "id".
-     *
-     * @param parentClass the parent resource class.
-     * @param parentIdentifierClass the parent resource identifier class.
-     * @param resourceClass the resource class.
-     * @param parentField the name of the parent identifier field in the resource class.
-     * @param resourceIdentifierClass the resource identifier class.
-     */
-    protected BaseChildResource(final Class<P> parentClass,
-                                final Class<J> parentIdentifierClass,
-                                final Class<R> resourceClass,
-                                final String parentField,
-                                final Class<I> resourceIdentifierClass) {
-        this(parentClass, parentIdentifierClass, resourceClass, resourceIdentifierClass);
-        this.parentField = parentField;
-    }
+    protected abstract Class<J> getParentIdentifierClass();
 
-    /**
-     * Constructs a base child resource.
-     * @param parentClass the parent resource class.
-     * @param parentIdentifierClass the parent resource identifier class.
-     * @param parentIdentifierField the parent resource identifier field name.
-     * @param resourceClass the resource class.
-     * @param parentField the resource parent field name.
-     * @param resourceIdentifierClass the resource identifier class.
-     * @param resourceIdentifierField the resource identifier field name.
-     */
-    protected BaseChildResource(final Class<P> parentClass,
-                                final Class<J> parentIdentifierClass,
-                                final String parentIdentifierField,
-                                final Class<R> resourceClass,
-                                final String parentField,
-                                final Class<I> resourceIdentifierClass,
-                                final String resourceIdentifierField) {
-        super(resourceClass, resourceIdentifierClass, resourceIdentifierField);
-        this.parentClass = parentClass;
-        this.parentIdentifierClass = parentIdentifierClass;
-        this.parentIdentifierField = parentIdentifierField;
-        this.parentField = parentField;
-    }
+    protected abstract String getParentField();
 
+    protected abstract Repository<P, J> getParentRepository();
 
     /**
      * Sets up to authorize parent resources when handler methods are called. No restrictions are applied.
@@ -103,7 +44,7 @@ public abstract class BaseChildResource<P, J extends Serializable, R, I extends 
      * This is the equivalent of calling {@link #authorizeParent(java.util.Map)} with an empty map.
      * </p>
      */
-    protected final void authorizeParent() {
+    protected void authorizeParent() {
         authorizeParent(new HashMap<>());
     }
 
@@ -118,8 +59,10 @@ public abstract class BaseChildResource<P, J extends Serializable, R, I extends 
      *                     resources.</li>
      *                     </ul>
      */
-    protected final void authorizeParent(final Map<String, Object> restrictions) {
-        parentAuthorizeRestrictions = Collections.unmodifiableMap(restrictions);
+    protected void authorizeParent(final Map<String, Object> restrictions) {
+        synchronized (this) {
+            parentAuthorizeRestrictions = Collections.unmodifiableMap(restrictions);
+        }
     }
 
     /**
@@ -128,7 +71,7 @@ public abstract class BaseChildResource<P, J extends Serializable, R, I extends 
      * This is the equivalent of calling {@link #loadAndAuthorizeParent(java.util.Map)} with an empty map.
      * </p>
      */
-    protected final void loadAndAuthorizeParent() {
+    protected void loadAndAuthorizeParent() {
         loadAndAuthorizeParent(new HashMap<>());
     }
 
@@ -147,7 +90,7 @@ public abstract class BaseChildResource<P, J extends Serializable, R, I extends 
      *                     authorize resources.</li>
      *                     </ul>
      */
-    protected final void loadAndAuthorizeParent(final Map<String, Object> restrictions) {
+    protected void loadAndAuthorizeParent(final Map<String, Object> restrictions) {
         loadParent(restrictions);
         authorizeParent(restrictions);
     }
@@ -158,7 +101,7 @@ public abstract class BaseChildResource<P, J extends Serializable, R, I extends 
      * This is the equivalent of calling {@link #loadParent(java.util.Map)} with an empty map.
      * </p>
      */
-    protected final void loadParent() {
+    protected void loadParent() {
         loadParent(new HashMap<>());
     }
 
@@ -172,8 +115,10 @@ public abstract class BaseChildResource<P, J extends Serializable, R, I extends 
      *                     resources.</li>
      *                     </ul>
      */
-    protected final void loadParent(final Map<String, Object> restrictions) {
-        parentLoadRestrictions = Collections.unmodifiableMap(restrictions);
+    protected void loadParent(final Map<String, Object> restrictions) {
+        synchronized (this) {
+            parentLoadRestrictions = Collections.unmodifiableMap(restrictions);
+        }
     }
 
     /**
@@ -181,7 +126,7 @@ public abstract class BaseChildResource<P, J extends Serializable, R, I extends 
      *
      * @return the loaded parent.
      */
-    protected final P parent() {
+    protected P parent() {
         return parent.get();
     }
 
@@ -190,7 +135,7 @@ public abstract class BaseChildResource<P, J extends Serializable, R, I extends 
      * {@inheritDoc}
      */
     @Override
-    protected final boolean retrieveMultiple(final HandlerMethod handlerMethod, final Map<String, String> ids)
+    protected boolean retrieveMultiple(final HandlerMethod handlerMethod, final Map<String, String> ids)
             throws CoffeeCanException {
         if (!retrieveParent(handlerMethod, ids)) {
             return false;
@@ -200,8 +145,8 @@ public abstract class BaseChildResource<P, J extends Serializable, R, I extends 
         }
 
         final AuthorizationCriteria<R> authorizationCriteria =
-                new AuthorizationCriteriaBuilder<>(resourceClass)
-                        .compare(parentField, Operation.EQUALS, findParentId(ids))
+                new AuthorizationCriteriaBuilder<>(getResourceClass())
+                        .compare(getParentField(), Operation.EQUALS, findParentId(ids))
                         .build();
         resourceSpecifications.set(resourceSpecifications.get().and(authorizationCriteria.toSpecification()));
         return true;
@@ -211,7 +156,7 @@ public abstract class BaseChildResource<P, J extends Serializable, R, I extends 
      * {@inheritDoc}
      */
     @Override
-    protected final boolean retrieveSingle(final HandlerMethod handlerMethod, final Map<String, String> ids)
+    protected boolean retrieveSingle(final HandlerMethod handlerMethod, final Map<String, String> ids)
             throws CoffeeCanException {
         if (!retrieveParent(handlerMethod, ids)) {
             return false;
@@ -220,42 +165,40 @@ public abstract class BaseChildResource<P, J extends Serializable, R, I extends 
         return super.retrieveSingle(handlerMethod, ids);
     }
 
-    private boolean retrieveParent(final HandlerMethod handlerMethod, final Map<String, String> ids)
+    private boolean retrieveParent(final HandlerMethod handlerMethod, Map<String, String> ids)
             throws CoffeeCanException {
-        if (!shouldHandle(handlerMethod, parentLoadRestrictions) &&
-            !shouldHandle(handlerMethod, parentAuthorizeRestrictions)) {
+        final Map<String, Object> loadRestrictions;
+        final Map<String, Object> authorizeRestrictions;
+        synchronized (this) {
+            loadRestrictions = (parentLoadRestrictions == null) ? null : new HashMap<>(parentLoadRestrictions);
+            authorizeRestrictions = (parentAuthorizeRestrictions == null) ? null : new HashMap<>(parentAuthorizeRestrictions);
+        }
+
+        if (!shouldHandle(handlerMethod, loadRestrictions) &&
+            !shouldHandle(handlerMethod, authorizeRestrictions)) {
             return true;
         }
 
         final P loadedParent = findParent(ids);
-        if (!authorizeObject(handlerMethod, parentAuthorizeRestrictions, loadedParent)) {
+        if (!authorizeObject(handlerMethod, authorizeRestrictions, loadedParent)) {
             return false;
         }
 
-        parent.set(shouldHandle(handlerMethod, parentLoadRestrictions) ? loadedParent : null);
+        parent.set(shouldHandle(handlerMethod, loadRestrictions) ? loadedParent : null);
         return true;
     }
 
     private P findParent(final Map<String, String> ids) {
-        final J id = idOfType(parentIdentifierClass, findParentId(ids));
+        final J id = idOfType(getParentIdentifierClass(), findParentId(ids));
 
         return findParentInRepository(id);
     }
 
     private String findParentId(final Map<String, String> ids) {
-        return ids.get(parentField);
+        return ids.get(getParentField());
     }
 
     private P findParentInRepository(final J id) {
-        locateParentRepository();
-
-        return ((CrudRepository<P, J>) parentRepository).findOne(id);
-    }
-
-    private void locateParentRepository() {
-        if (parentRepository == null) {
-            final Repositories repositories = new Repositories(applicationContext);
-            parentRepository = (Repository<P, J>) repositories.getRepositoryFor(parentClass);
-        }
+        return ((CrudRepository<P, J>) getParentRepository()).findOne(id);
     }
 }

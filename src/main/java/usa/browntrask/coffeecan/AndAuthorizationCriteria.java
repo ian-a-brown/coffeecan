@@ -17,7 +17,7 @@ import java.util.List;
  * @version 1.0.0
  * @since 2018/03/06
  */
-final class AndAuthorizationCriteria<R> extends AbstractJoinAuthorizationCriteria<R> {
+class AndAuthorizationCriteria<R> extends AbstractJoinAuthorizationCriteria<R> {
 
     /**
      * Constructs a default AND authorization criteria.

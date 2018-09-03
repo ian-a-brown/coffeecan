@@ -41,7 +41,7 @@ class NotAuthorizationCriteriaIntegrationSpec extends Specification {
     @Unroll("toSpecification stringField #matchOperation #matchValue returns #matches")
     def "toSpecification finds the expected results from the database"() {
         given:
-        ComparisonAuthorizationCriteria<TestEntity> authorizationCriteria = new ComparisonAuthorizationCriteria<>('stringField', matchOperation, matchValue)
+        ComparisonAuthorizationCriteria<TestEntity> authorizationCriteria = new ComparisonAuthorizationCriteria<>(TestEntity, 'stringField', matchOperation, matchValue)
 
         and:
         NotAuthorizationCriteria<TestEntity> notAuthorizationCriteria = new NotAuthorizationCriteria<>(authorizationCriteria)
