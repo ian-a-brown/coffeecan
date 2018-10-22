@@ -74,7 +74,7 @@ public abstract class BaseResource<R, I extends Serializable> {
     }
 
     protected boolean authorizeObject(final HandlerMethod handlerMethod, final Map<String, Object> restrictions,
-                                            final Object object)
+                                      final Object object)
             throws CoffeeCanException {
         if (!shouldHandle(handlerMethod, restrictions)) {
             return true;
@@ -294,6 +294,22 @@ public abstract class BaseResource<R, I extends Serializable> {
         return retrieveResource(handlerMethod, ids);
     }
 
+    /**
+     * Retrieves (load and authorize) the context for the resource object.
+     * <p>
+     * This method should be overriden as needed in subclasses. By default, it does nothing.
+     * </p>
+     *
+     * @param handlerMethod the handler method for the endpoint.
+     * @param ids           the ids to match.
+     * @return <code>true</code> if the retrieval was successful, <code>false</code> if it was denied.
+     * @throws CoffeeCanException if there is a problem accessing the context.
+     */
+    protected boolean retrieveContext(final HandlerMethod handlerMethod, Map<String, String> ids)
+            throws CoffeeCanException {
+        return true;
+    }
+
     protected boolean shouldHandle(final HandlerMethod handlerMethod, final Map<String, Object> restrictions) {
         if ((restrictions == null) || restrictions.isEmpty()) {
             return true;
@@ -338,7 +354,8 @@ public abstract class BaseResource<R, I extends Serializable> {
         final Map<String, Object> authorizeRestrictions;
         synchronized (this) {
             loadRestrictions = (resourceLoadRestrictions == null) ? null : new HashMap<>(resourceLoadRestrictions);
-            authorizeRestrictions = (resourceAuthorizeRestrictions == null) ? null : new HashMap<>(resourceAuthorizeRestrictions);
+            authorizeRestrictions =
+                    (resourceAuthorizeRestrictions == null) ? null : new HashMap<>(resourceAuthorizeRestrictions);
         }
 
         if (!shouldHandle(handlerMethod, loadRestrictions) &&

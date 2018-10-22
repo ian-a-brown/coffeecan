@@ -130,6 +130,14 @@ public abstract class BaseChildResource<P, J extends Serializable, R, I extends 
         return parent.get();
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected boolean retrieveContext(final HandlerMethod handlerMethod, final Map<String, String> ids)
+            throws CoffeeCanException {
+        return retrieveParent(handlerMethod, ids);
+    }
 
     /**
      * {@inheritDoc}
@@ -171,7 +179,8 @@ public abstract class BaseChildResource<P, J extends Serializable, R, I extends 
         final Map<String, Object> authorizeRestrictions;
         synchronized (this) {
             loadRestrictions = (parentLoadRestrictions == null) ? null : new HashMap<>(parentLoadRestrictions);
-            authorizeRestrictions = (parentAuthorizeRestrictions == null) ? null : new HashMap<>(parentAuthorizeRestrictions);
+            authorizeRestrictions =
+                    (parentAuthorizeRestrictions == null) ? null : new HashMap<>(parentAuthorizeRestrictions);
         }
 
         if (!shouldHandle(handlerMethod, loadRestrictions) &&

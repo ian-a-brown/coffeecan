@@ -149,6 +149,12 @@ public class CoffeeCanInterceptor extends HandlerInterceptorAdapter {
         return true;
     }
 
+    // TODO: this method needs to be tested.
+    private boolean preHandlePost(final HandlerMethod handler, final BaseResource bean,
+                                   final Map<String, String> ids) throws CoffeeCanException {
+        return bean.retrieveContext(handler, ids);
+    }
+
     private boolean preHandlePatch(final HandlerMethod handler, final BaseResource bean,
                                    final Map<String, String> ids) throws CoffeeCanException {
         return bean.retrieveSingle(handler, ids);
@@ -168,6 +174,8 @@ public class CoffeeCanInterceptor extends HandlerInterceptorAdapter {
             return preHandleDelete(handler, bean, ids);
         } else if ("PATCH".equalsIgnoreCase(method)) {
             return preHandlePatch(handler, bean, ids);
+        } else if ("POST".equalsIgnoreCase(method)) {
+            return preHandlePost(handler, bean, ids);
         } else if ("PUT".equalsIgnoreCase(method)) {
             return preHandlePut(handler, bean, ids);
         } else {
