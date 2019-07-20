@@ -1,5 +1,6 @@
 package usa.browntrask.coffeecan
 
+import org.springframework.data.repository.CrudRepository
 import org.springframework.data.repository.Repository
 import org.springframework.mock.web.MockHttpServletRequest
 import org.springframework.mock.web.MockHttpServletResponse
@@ -18,7 +19,6 @@ import javax.persistence.criteria.CriteriaBuilder
 import javax.persistence.criteria.CriteriaQuery
 import javax.persistence.criteria.Predicate
 import javax.persistence.criteria.Root
-import javax.servlet.http.HttpServletResponse
 
 class CoffeeCanInterceptorSpec extends Specification {
 
@@ -136,6 +136,43 @@ class CoffeeCanInterceptorSpec extends Specification {
 
         where:
         testEntity = new TestEntity(5)
+    }
+
+    @spock.lang.Ignore
+    def "Post to secondary creates a secondary"() {
+        given:
+        request = new MockHttpServletRequest("POST", "/testEntity/${testEntity.id}/extended/secondary")
+
+        and:
+        EntityExtenderResource controller = new EntityExtenderResource(
+                methodParameters: [
+                        'id': "${testEntity.id}"
+                ],
+                testEntity: testEntity,
+                testSecondary: testSecondary
+        )
+
+        and:
+        HandlerMethod handlerMethod = new HandlerMethod(controller, controller.getClass().getMethod("create", Long.class))
+
+        when:
+        boolean result = coffeeCanInterceptor.preHandle(request, response, handlerMethod)
+
+        then:
+        result
+
+        and:
+        null == controller.specification
+
+        and:
+        testEntity == controller.entity
+
+        and:
+        testSecondary == controller.secondary
+
+        where:
+        testEntity = new TestEntity(6)
+        testSecondary = new Long(2)
     }
 
     def "Put with an ID parameter replaces an existing entity"() {
@@ -325,6 +362,140 @@ class CoffeeCanInterceptorSpec extends Specification {
 
             specification = testSpecification
             return true
+        }
+    }
+
+    @RestController
+    @RequestMapping(path = "/testEntity/{id}/extender")
+    private class EntityExtenderResource extends BaseSecondaryResource<TestEntity, Long> {
+
+        private org.springframework.data.jpa.domain.Specification<TestEntity> testSpecification
+        org.springframework.data.jpa.domain.Specification<TestEntity> specification
+        private Map<String, String> methodParameters
+        private TestEntity testEntity
+        private Long testSecondary
+        TestEntity entity
+        Long secondary
+
+        @Override
+        protected Class<TestEntity> getResourceClass() {
+            return TestEntity
+        }
+
+        @Override
+        protected Class<Long> getResourceIdentifierClass() {
+            return Long
+        }
+
+        @Override
+        protected Repository<TestEntity, Long> getResourceRepository() {
+            return new CrudRepository<TestEntity, Long>() {
+
+                @Override
+                def <S> S save(final S entity) {
+                    throw new UnsupportedOperationException("Not implemented yet")
+                }
+
+                @Override
+                def <S> Iterable<S> save(final Iterable<S> entities) {
+                    throw new UnsupportedOperationException("Not implemented yet")
+                }
+
+                @Override
+                TestEntity findOne(final Long aLong) {
+                    return testEntity
+                }
+
+                @Override
+                boolean exists(final Long aLong) {
+                    throw new UnsupportedOperationException("Not implemented yet")
+                }
+
+                @Override
+                Iterable<TestEntity> findAll() {
+                    throw new UnsupportedOperationException("Not implemented yet")
+                }
+
+                @Override
+                Iterable<TestEntity> findAll(final Iterable<Long> longs) {
+                    throw new UnsupportedOperationException("Not implemented yet")
+                }
+
+                @Override
+                long count() {
+                    throw new UnsupportedOperationException("Not implemented yet")
+                }
+
+                @Override
+                void delete(final Long aLong) {
+                    throw new UnsupportedOperationException("Not implemented yet")
+                }
+
+                @Override
+                void delete(final TestEntity entity) {
+                    throw new UnsupportedOperationException("Not implemented yet")
+                }
+
+                @Override
+                void delete(final Iterable<? extends TestEntity> entities) {
+                    throw new UnsupportedOperationException("Not implemented yet")
+               }
+
+                @Override
+                void deleteAll() {
+                    throw new UnsupportedOperationException("Not implemented yet")
+               }
+            }
+        }
+
+        @Override
+        Capability capability() {
+            throw new UnsupportedOperationException("Should not be called")
+        }
+
+        @GetMapping("/secondary/{secondary_id}")
+        TestEntity read(@PathVariable("id") final Long id, @PathVariable("secondary_id") final Long secondaryId) {
+            throw new UnsupportedOperationException("Should not be called")
+        }
+
+        @PostMapping("/secondary")
+        TestEntity create(@PathVariable("id") final Long id) {
+            throw new UnsupportedOperationException("Not implemented yet")
+        }
+
+        @PutMapping("/secondary/{secondary_id}")
+        TestEntity replace(@PathVariable("id") final Long id, @PathVariable("secondary_id") final Long secondaryId) {
+            throw new UnsupportedOperationException("Not implemented yet")
+        }
+
+        @PatchMapping("/secondary/{secondary_id}")
+        TestEntity update(@PathVariable("id") final Long id, @PathVariable("secondary_id") final Long secondaryId) {
+            throw new UnsupportedOperationException("Not implemented yet")
+        }
+
+        @DeleteMapping("/secondary/{secondary_id}")
+        TestEntity delete(@PathVariable("id") final Long id, @PathVariable("secondary_id") final Long secondaryId) {
+            throw new UnsupportedOperationException("Not implemented yet")
+        }
+
+        @Override
+        protected boolean retrieveSingle(final HandlerMethod handlerMethod, final Map<String, String> ids) {
+            if (ids != methodParameters) {
+                throw new IllegalArgumentException("IDs should be " + methodParameters + ", got " + ids)
+            }
+
+            if (ids.containsKey("id")) {
+                entity = testEntity
+            }
+            if (ids.containsKey("secondary_id")) {
+                secondary = testSecondary
+            }
+
+            return true
+        }
+
+        protected boolean retrieveMultiple(final HandlerMethod handlerMethod, final Map<String, String> ids) {
+            throw new UnsupportedOperationException("Retrieve multiple for " + ids + " is not supported")
         }
     }
 }

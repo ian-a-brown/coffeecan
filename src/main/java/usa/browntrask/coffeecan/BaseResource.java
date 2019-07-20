@@ -80,7 +80,16 @@ public abstract class BaseResource<R, I extends Serializable> {
             return true;
         }
 
-        return capability().allows(handlerMethod.getMethod().getName(), object);
+        // TODO add test for this.
+        String methodName = handlerMethod.getMethod().getName();
+        if ((restrictions != null) && restrictions.containsKey("mapMethod")) {
+            final Map<String, String> methodMap = (Map<String, String>) restrictions.get("mapMethod");
+            if (methodMap.containsKey(methodName)) {
+                methodName = methodMap.get(methodName);
+            }
+        }
+
+        return capability().allows(methodName, object);
     }
 
     /**
@@ -348,7 +357,7 @@ public abstract class BaseResource<R, I extends Serializable> {
         return ((CrudRepository<R, I>) getResourceRepository()).findOne(id);
     }
 
-    private boolean retrieveResource(final HandlerMethod handlerMethod, final Map<String, String> ids)
+    protected boolean retrieveResource(final HandlerMethod handlerMethod, final Map<String, String> ids)
             throws CoffeeCanException {
         final Map<String, Object> loadRestrictions;
         final Map<String, Object> authorizeRestrictions;

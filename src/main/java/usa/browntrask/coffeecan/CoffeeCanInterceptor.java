@@ -1,5 +1,7 @@
 package usa.browntrask.coffeecan;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.aop.TargetClassAware;
 import org.springframework.aop.TargetSource;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -25,6 +27,8 @@ import java.util.stream.Collectors;
  */
 public class CoffeeCanInterceptor extends HandlerInterceptorAdapter {
 
+    private Logger logger = LoggerFactory.getLogger(getClass());
+
     /**
      * {@inheritDoc}
      */
@@ -32,9 +36,7 @@ public class CoffeeCanInterceptor extends HandlerInterceptorAdapter {
     public boolean preHandle(final HttpServletRequest request, final HttpServletResponse response,
                              final Object handler) throws Exception {
         if (handler instanceof HandlerMethod) {
-            if (!"POST".equalsIgnoreCase(request.getMethod())) {
-                return preHandleHandlerMethod(request, response, (HandlerMethod) handler);
-            }
+            return preHandleHandlerMethod(request, response, (HandlerMethod) handler);
         }
 
         return true;
